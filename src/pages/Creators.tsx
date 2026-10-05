@@ -10,8 +10,15 @@ type AffiliateLink = {
 
 type ProductForm = {
   id?: string;
+  product_type_id: string;
   name: string;
   links: AffiliateLink[];
+};
+
+type ProductType = {
+  id: string;
+  name: string;
+  slug: string;
 };
 
 type Creator = {
@@ -43,6 +50,7 @@ const newAffiliateLink = (): AffiliateLink => ({
 
 const newProduct = (): ProductForm => ({
   name: "",
+  product_type_id: "",
   links: [newAffiliateLink()],
 });
 
@@ -50,6 +58,7 @@ export default function Creators() {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [retailers, setRetailers] = useState<Retailer[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
+  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
 
   const [showForm, setShowForm] = useState(false);
 
@@ -72,6 +81,7 @@ export default function Creators() {
     loadCreators();
     loadRetailers();
     loadMarkets();
+    loadProductTypes();
   }, []);
 
   // -----------------------------
@@ -125,6 +135,21 @@ export default function Creators() {
     }
 
     setMarkets(data || []);
+  }
+
+  async function loadProductTypes() {
+    const { data, error } = await supabase
+      .from("product_types")
+      .select("id, name, slug")
+      .eq("status", "active")
+      .order("name");
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setProductTypes(data || []);
   }
 
   // -----------------------------
@@ -342,7 +367,10 @@ export default function Creators() {
       // -----------------------------
 
       for (const product of products) {
-        if (!product.name.trim()) {
+        if (
+          !product.name.trim() ||
+          !product.product_type_id
+        ) {
           continue;
         }
 
@@ -362,6 +390,7 @@ export default function Creators() {
                 slug: `${productSlug}-${crypto
                   .randomUUID()
                   .slice(0, 8)}`,
+                product_type_id: product.product_type_id,
                 status: "draft",
               })
               .select()
@@ -558,7 +587,8 @@ export default function Creators() {
             product_id,
             products (
               id,
-              name
+              name,
+              product_type_id
             )
           `
           )
@@ -575,6 +605,7 @@ export default function Creators() {
           item.products as unknown as {
             id: string;
             name: string;
+            product_type_id: string;
           } | null;
 
         if (!productData) {
@@ -599,6 +630,8 @@ export default function Creators() {
         loadedProducts.push({
           id: productData.id,
           name: productData.name,
+          product_type_id:
+            productData.product_type_id || "",
           links:
             links && links.length > 0
               ? links
@@ -823,6 +856,44 @@ export default function Creators() {
                       )}
                     </div>
 
+                    {/* PRODUCT TYPE */}
+
+                    <div className="form-field">
+                      <label>
+                        Product Type
+                      </label>
+
+                      <select
+                        value={product.product_type_id}
+                        onChange={(e) =>
+                          setProducts((current) =>
+                            current.map((item, index) =>
+                              index === productIndex
+                                ? {
+                                    ...item,
+                                    product_type_id: e.target.value,
+                                  }
+                                : item
+                            )
+                          )
+                        }
+                        required
+                      >
+                        <option value="">
+                          Select product type
+                        </option>
+
+                        {productTypes.map((type) => (
+                          <option
+                            key={type.id}
+                            value={type.id}
+                          >
+                            {type.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* PRODUCT NAME */}
 
                     <div className="form-field">
@@ -900,7 +971,8 @@ export default function Creators() {
                                 Retailer
                               </label>
 
-                              <select
+                              <input
+                                type="text"
                                 value={
                                   link.retailer_id
                                 }
@@ -915,79 +987,11 @@ export default function Creators() {
                                       .value
                                   )
                                 }
+                                placeholder="e.g. Amazon"
                                 required
-                              >
-                                <option value="">
-                                  Select retailer
-                                </option>
-
-                                {retailers.map(
-                                  (
-                                    retailer
-                                  ) => (
-                                    <option
-                                      key={
-                                        retailer.id
-                                      }
-                                      value={
-                                        retailer.id
-                                      }
-                                    >
-                                      {
-                                        retailer.name
-                                      }
-                                    </option>
-                                  )
-                                )}
-                              </select>
+                              />
                             </div>
 
-                            <div className="form-field">
-                              <label>
-                                Market
-                              </label>
-
-                              <select
-                                value={
-                                  link.market_id
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateAffiliateLink(
-                                    productIndex,
-                                    linkIndex,
-                                    "market_id",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                                required
-                              >
-                                <option value="">
-                                  Select market
-                                </option>
-
-                                {markets.map(
-                                  (
-                                    market
-                                  ) => (
-                                    <option
-                                      key={
-                                        market.id
-                                      }
-                                      value={
-                                        market.id
-                                      }
-                                    >
-                                      {
-                                        market.name
-                                      }
-                                    </option>
-                                  )
-                                )}
-                              </select>
-                            </div>
 
                             <div className="form-field">
                               <label>
