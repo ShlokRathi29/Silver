@@ -376,4 +376,248 @@
   .form-actions button {
     width: 100%;
   }
+
+  /* =========================================
+   DASHBOARD
+   ========================================= */
+
+  .dashboard-page {
+    max-width: 1200px;
+  }
+
+  /* WELCOME */
+
+  .dashboard-welcome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+
+    padding: 28px 30px;
+    margin-bottom: 24px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+  }
+
+  .dashboard-eyebrow {
+    margin: 0 0 8px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dashboard-welcome h2 {
+    margin: 0 0 8px;
+    font-size: 25px;
+    line-height: 1.2;
+  }
+
+  .dashboard-welcome>div:first-child>p:last-child {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .dashboard-role {
+    min-width: 110px;
+    padding: 14px 16px;
+
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+
+    text-align: center;
+  }
+
+  .dashboard-role span {
+    display: block;
+    margin-bottom: 5px;
+
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .dashboard-role strong {
+    font-size: 14px;
+    text-transform: capitalize;
+  }
+
+  /* STATS */
+
+  .dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .dashboard-stat-card {
+    padding: 22px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+  }
+
+  .dashboard-stat-label {
+    margin-bottom: 12px;
+
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .dashboard-stat-value {
+    margin-bottom: 7px;
+
+    color: #111827;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .dashboard-stat-description {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+
+  /* SECTIONS */
+
+  .dashboard-section {
+    margin-bottom: 28px;
+  }
+
+  .dashboard-section-header {
+    margin-bottom: 14px;
+  }
+
+  .dashboard-section-header h2 {
+    margin: 0 0 5px;
+    font-size: 20px;
+  }
+
+  .dashboard-section-header p {
+    margin: 0;
+
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  /* EMPTY */
+
+  .dashboard-empty {
+    min-height: 180px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    color: #6b7280;
+    text-align: center;
+  }
+
+  .dashboard-empty strong {
+    color: #374151;
+    font-size: 15px;
+  }
+
+  .dashboard-empty span {
+    font-size: 14px;
+  }
+
+  /* DATABASE INFO */
+
+  .dashboard-info-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 30px;
+
+    padding: 24px 26px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+  }
+
+  .dashboard-info-card h3 {
+    margin: 0 0 7px;
+    font-size: 17px;
+  }
+
+  .dashboard-info-card p {
+    max-width: 700px;
+    margin: 0;
+
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .dashboard-summary {
+    flex-shrink: 0;
+
+    padding: 15px 20px;
+
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+  }
+
+  .dashboard-summary span {
+    display: block;
+    margin-bottom: 5px;
+
+    color: #6b7280;
+    font-size: 11px;
+  }
+
+  .dashboard-summary strong {
+    font-size: 22px;
+  }
+
+  /* DASHBOARD MOBILE */
+
+  @media (max-width: 900px) {
+    .dashboard-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .dashboard-welcome {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .dashboard-role {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .dashboard-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .dashboard-info-card {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .dashboard-summary {
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
 }

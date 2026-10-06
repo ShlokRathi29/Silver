@@ -4,7 +4,6 @@ import { supabase } from "../lib/supabase";
 type AffiliateLink = {
   id?: string;
   retailer_id: string;
-  market_id: string;
   affiliate_url: string;
 };
 
@@ -37,14 +36,8 @@ type Retailer = {
   name: string;
 };
 
-type Market = {
-  id: string;
-  name: string;
-};
-
 const newAffiliateLink = (): AffiliateLink => ({
   retailer_id: "",
-  market_id: "",
   affiliate_url: "",
 });
 
@@ -57,7 +50,6 @@ const newProduct = (): ProductForm => ({
 export default function Creators() {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [retailers, setRetailers] = useState<Retailer[]>([]);
-  const [markets, setMarkets] = useState<Market[]>([]);
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
 
   const [showForm, setShowForm] = useState(false);
@@ -77,10 +69,15 @@ export default function Creators() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [removedProductIds, setRemovedProductIds] =
+    useState<string[]>([]);
+
+  const [removedAffiliateLinkIds, setRemovedAffiliateLinkIds] =
+    useState<string[]>([]);
+
   useEffect(() => {
     loadCreators();
     loadRetailers();
-    loadMarkets();
     loadProductTypes();
   }, []);
 
@@ -122,21 +119,6 @@ export default function Creators() {
     setRetailers(data || []);
   }
 
-  async function loadMarkets() {
-    const { data, error } = await supabase
-      .from("markets")
-      .select("id, name")
-      .eq("status", "active")
-      .order("name");
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setMarkets(data || []);
-  }
-
   async function loadProductTypes() {
     const { data, error } = await supabase
       .from("product_types")
@@ -173,6 +155,10 @@ export default function Creators() {
     setProducts([newProduct()]);
 
     setEditingCreatorId(null);
+
+    setRemovedProductIds([]);
+    setRemovedAffiliateLinkIds([]);
+
     setError("");
   }
 
@@ -198,9 +184,19 @@ export default function Creators() {
   }
 
   function removeProduct(index: number) {
-    setProducts((current) =>
-      current.filter((_, i) => i !== index)
-    );
+    setProducts((current) => {
+      const product = current[index];
+
+      if (product?.id) {
+        setRemovedProductIds((ids) =>
+          ids.includes(product.id as string)
+            ? ids
+            : [...ids, product.id as string]
+        );
+      }
+
+      return current.filter((_, i) => i !== index);
+    });
   }
 
   function updateProductName(
@@ -243,18 +239,29 @@ export default function Creators() {
     productIndex: number,
     linkIndex: number
   ) {
-    setProducts((current) =>
-      current.map((product, index) =>
+    setProducts((current) => {
+      const product = current[productIndex];
+      const link = product?.links[linkIndex];
+
+      if (link?.id) {
+        setRemovedAffiliateLinkIds((ids) =>
+          ids.includes(link.id!)
+            ? ids
+            : [...ids, link.id!]
+        );
+      }
+
+      return current.map((product, index) =>
         index === productIndex
           ? {
-            ...product,
-            links: product.links.filter(
-              (_, i) => i !== linkIndex
-            ),
-          }
+              ...product,
+              links: product.links.filter(
+                (_, i) => i !== linkIndex
+              ),
+            }
           : product
-      )
-    );
+      );
+    });
   }
 
   function updateAffiliateLink(
@@ -283,6 +290,52 @@ export default function Creators() {
         };
       })
     );
+  }
+
+
+  async function getRetailerId(
+    retailerName: string
+  ): Promise<string> {
+    const normalizedName = retailerName.trim();
+
+    if (!normalizedName) {
+      throw new Error("Retailer is required.");
+    }
+
+    const existing = retailers.find(
+      (retailer) =>
+        retailer.name.toLowerCase() ===
+        normalizedName.toLowerCase()
+    );
+
+    if (existing) {
+      return existing.id;
+    }
+
+    const { data, error } = await supabase
+      .from("retailers")
+      .insert({
+        name: normalizedName,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      throw new Error(
+        `Could not create retailer "${normalizedName}": ${error.message}`
+      );
+    }
+
+    setRetailers((current) => [
+      ...current,
+      {
+        id: data.id,
+        name: normalizedName,
+      },
+    ]);
+
+    return data.id;
   }
 
   // -----------------------------
@@ -363,7 +416,41 @@ export default function Creators() {
       }
 
       // -----------------------------
-      // CREATE PRODUCTS
+      // DELETE REMOVED AFFILIATE LINKS
+      // -----------------------------
+
+      if (removedAffiliateLinkIds.length > 0) {
+        const { error } = await supabase
+          .from("affiliate_links")
+          .delete()
+          .in("id", removedAffiliateLinkIds);
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      // -----------------------------
+      // DELETE REMOVED PRODUCT LINKS
+      // -----------------------------
+
+      if (
+        editingCreatorId &&
+        removedProductIds.length > 0
+      ) {
+        const { error } = await supabase
+          .from("creator_gear")
+          .delete()
+          .eq("creator_id", creatorId)
+          .in("product_id", removedProductIds);
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      // -----------------------------
+      // SAVE PRODUCTS
       // -----------------------------
 
       for (const product of products) {
@@ -376,38 +463,56 @@ export default function Creators() {
 
         let productId = product.id;
 
-        // Create product
-        if (!productId) {
-          const productSlug = createSlug(
-            product.name
-          );
+        // -----------------------------
+        // CREATE PRODUCT
+        // -----------------------------
 
-          const { data, error } =
-            await supabase
-              .from("products")
-              .insert({
-                name: product.name.trim(),
-                slug: `${productSlug}-${crypto
-                  .randomUUID()
-                  .slice(0, 8)}`,
-                product_type_id: product.product_type_id,
-                status: "draft",
-              })
-              .select()
-              .single();
+        if (!productId) {
+          const productSlug = createSlug(product.name);
+
+          const { data, error } = await supabase
+            .from("products")
+            .insert({
+              name: product.name.trim(),
+              slug: `${productSlug}-${crypto
+                .randomUUID()
+                .slice(0, 8)}`,
+              product_type_id:
+                product.product_type_id,
+              status: "draft",
+            })
+            .select()
+            .single();
 
           if (error) {
             throw error;
           }
 
           productId = data.id;
+        } else {
+          // -----------------------------
+          // UPDATE EXISTING PRODUCT
+          // -----------------------------
+
+          const { error } = await supabase
+            .from("products")
+            .update({
+              name: product.name.trim(),
+              product_type_id:
+                product.product_type_id,
+            })
+            .eq("id", productId);
+
+          if (error) {
+            throw error;
+          }
         }
 
         // -----------------------------
         // CONNECT CREATOR + PRODUCT
         // -----------------------------
 
-        const { data: existingGear } =
+        const { data: existingGear, error: gearCheckError } =
           await supabase
             .from("creator_gear")
             .select("id")
@@ -415,14 +520,17 @@ export default function Creators() {
             .eq("product_id", productId)
             .maybeSingle();
 
+        if (gearCheckError) {
+          throw gearCheckError;
+        }
+
         if (!existingGear) {
           const { error } = await supabase
             .from("creator_gear")
             .insert({
               creator_id: creatorId,
               product_id: productId,
-              verification_status:
-                "unverified",
+              verification_status: "unverified",
               status: "active",
             });
 
@@ -432,36 +540,57 @@ export default function Creators() {
         }
 
         // -----------------------------
-        // AFFILIATE LINKS
+        // SAVE AFFILIATE LINKS
         // -----------------------------
 
         for (const link of product.links) {
           if (
-            !link.retailer_id ||
-            !link.market_id ||
+            !link.retailer_id.trim() ||
             !link.affiliate_url.trim()
           ) {
             continue;
           }
 
-          const { error } = await supabase
-            .from("affiliate_links")
-            .insert({
-              product_id: productId,
-              retailer_id: link.retailer_id,
-              market_id: link.market_id,
-              affiliate_url:
-                link.affiliate_url.trim(),
-              status: "active",
-            });
+          const retailerId = await getRetailerId(
+            link.retailer_id
+          );
 
-          if (error) {
-            // Ignore duplicate affiliate links
-            if (
-              !error.message
-                .toLowerCase()
-                .includes("duplicate")
-            ) {
+          // -----------------------------
+          // UPDATE EXISTING LINK
+          // -----------------------------
+
+          if (link.id) {
+            const { error } = await supabase
+              .from("affiliate_links")
+              .update({
+                retailer_id: retailerId,
+                affiliate_url:
+                  link.affiliate_url.trim(),
+                status: "active",
+              })
+              .eq("id", link.id);
+
+            if (error) {
+              throw error;
+            }
+          }
+
+          // -----------------------------
+          // CREATE NEW LINK
+          // -----------------------------
+
+          else {
+            const { error } = await supabase
+              .from("affiliate_links")
+              .insert({
+                product_id: productId,
+                retailer_id: retailerId,
+                affiliate_url:
+                  link.affiliate_url.trim(),
+                status: "active",
+              });
+
+            if (error) {
               throw error;
             }
           }
@@ -572,27 +701,22 @@ export default function Creators() {
   // EDIT CREATOR
   // -----------------------------
 
-  async function editCreator(
-    creator: Creator
-  ) {
+  async function editCreator(creator: Creator) {
     setLoading(true);
     setError("");
 
     try {
-      const { data: gear, error: gearError } =
-        await supabase
-          .from("creator_gear")
-          .select(
-            `
-            product_id,
-            products (
-              id,
-              name,
-              product_type_id
-            )
-          `
+      const { data: gear, error: gearError } = await supabase
+        .from("creator_gear")
+        .select(`
+          product_id,
+          products (
+            id,
+            name,
+            product_type_id
           )
-          .eq("creator_id", creator.id);
+        `)
+        .eq("creator_id", creator.id);
 
       if (gearError) {
         throw gearError;
@@ -601,40 +725,45 @@ export default function Creators() {
       const loadedProducts: ProductForm[] = [];
 
       for (const item of gear || []) {
-        const productData =
-          item.products as unknown as {
-            id: string;
-            name: string;
-            product_type_id: string;
-          } | null;
+        const productData = item.products as unknown as {
+          id: string;
+          name: string;
+          product_type_id: string;
+        } | null;
 
         if (!productData) {
           continue;
         }
 
-        const { data: links, error: linksError } =
-          await supabase
-            .from("affiliate_links")
-            .select(
-              "id, retailer_id, market_id, affiliate_url"
-            )
-            .eq(
-              "product_id",
-              productData.id
-            );
+        const { data: links, error: linksError } = await supabase
+          .from("affiliate_links")
+          .select("id, retailer_id, affiliate_url")
+          .eq("product_id", productData.id);
 
         if (linksError) {
           throw linksError;
         }
 
+        const convertedLinks: AffiliateLink[] =
+          (links || []).map((link) => {
+            const retailer = retailers.find(
+              (item) => item.id === link.retailer_id
+            );
+
+            return {
+              id: link.id,
+              retailer_id: retailer?.name || "",
+              affiliate_url: link.affiliate_url || "",
+            };
+          });
+
         loadedProducts.push({
           id: productData.id,
           name: productData.name,
-          product_type_id:
-            productData.product_type_id || "",
+          product_type_id: productData.product_type_id || "",
           links:
-            links && links.length > 0
-              ? links
+            convertedLinks.length > 0
+              ? convertedLinks
               : [newAffiliateLink()],
         });
       }
@@ -833,7 +962,7 @@ export default function Creators() {
                 (product, productIndex) => (
                   <div
                     className="product-card"
-                    key={productIndex}
+                    key={product.id || `new-product-${productIndex}`}
                   >
                     <div className="product-card-header">
                       <h3>
@@ -870,9 +999,9 @@ export default function Creators() {
                             current.map((item, index) =>
                               index === productIndex
                                 ? {
-                                    ...item,
-                                    product_type_id: e.target.value,
-                                  }
+                                  ...item,
+                                  product_type_id: e.target.value,
+                                }
                                 : item
                             )
                           )
@@ -923,9 +1052,7 @@ export default function Creators() {
                         </h4>
 
                         <p>
-                          Add different stores
-                          and markets for this
-                          product.
+                          Add different stores for this product.
                         </p>
                       </div>
 
@@ -937,7 +1064,8 @@ export default function Creators() {
                           <div
                             className="affiliate-card"
                             key={
-                              linkIndex
+                              link.id ||
+                              `new-link-${productIndex}-${linkIndex}`
                             }
                           >
                             <div className="affiliate-card-header">
@@ -967,31 +1095,23 @@ export default function Creators() {
                             </div>
 
                             <div className="form-field">
-                              <label>
-                                Retailer
-                              </label>
+                              <label>Retailer</label>
 
                               <input
                                 type="text"
-                                value={
-                                  link.retailer_id
-                                }
-                                onChange={(
-                                  e
-                                ) =>
+                                value={link.retailer_id}
+                                onChange={(e) =>
                                   updateAffiliateLink(
                                     productIndex,
                                     linkIndex,
                                     "retailer_id",
-                                    e.target
-                                      .value
+                                    e.target.value
                                   )
                                 }
                                 placeholder="e.g. Amazon"
                                 required
                               />
                             </div>
-
 
                             <div className="form-field">
                               <label>
