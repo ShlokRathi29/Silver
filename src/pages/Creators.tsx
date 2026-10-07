@@ -254,11 +254,11 @@ export default function Creators() {
       return current.map((product, index) =>
         index === productIndex
           ? {
-              ...product,
-              links: product.links.filter(
-                (_, i) => i !== linkIndex
-              ),
-            }
+            ...product,
+            links: product.links.filter(
+              (_, i) => i !== linkIndex
+            ),
+          }
           : product
       );
     });
@@ -691,6 +691,96 @@ export default function Creators() {
         err instanceof Error
           ? err.message
           : "Could not remove creator."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // -----------------------------
+  // PUBLISH / UNPUBLISH CREATOR
+  // -----------------------------
+
+  async function toggleCreatorPublishStatus(
+    creator: Creator
+  ) {
+    const isPublished = creator.status === "published";
+    const nextStatus = isPublished
+      ? "draft"
+      : "published";
+
+    const action = isPublished
+      ? "unpublish"
+      : "publish";
+
+    const confirmed = window.confirm(
+      isPublished
+        ? `Unpublish "${creator.name}"?\n\nIt will no longer appear on the public CreatorGear website.`
+        : `Publish "${creator.name}"?\n\nMake sure the creator, products, and affiliate links have been reviewed first.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // When publishing a creator, publish the products attached to
+      // that creator as well. Unpublishing the creator does NOT
+      // unpublish products because a product may be shared by
+      // another published creator.
+      if (!isPublished) {
+        const { data: gear, error: gearError } =
+          await supabase
+            .from("creator_gear")
+            .select("product_id")
+            .eq("creator_id", creator.id)
+            .eq("status", "active");
+
+        if (gearError) {
+          throw gearError;
+        }
+
+        const productIds = Array.from(
+          new Set(
+            (gear || [])
+              .map((item) => item.product_id)
+              .filter(Boolean)
+          )
+        );
+
+        if (productIds.length > 0) {
+          const { error: productError } =
+            await supabase
+              .from("products")
+              .update({ status: "published" })
+              .in("id", productIds);
+
+          if (productError) {
+            throw productError;
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from("creators")
+        .update({ status: nextStatus })
+        .eq("id", creator.id);
+
+      if (error) {
+        throw error;
+      }
+
+      await loadCreators();
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Could not ${action} creator.`
       );
     } finally {
       setLoading(false);
@@ -1263,8 +1353,24 @@ export default function Creators() {
                               creator
                             )
                           }
+                          disabled={loading}
                         >
                           Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="edit-button"
+                          onClick={() =>
+                            toggleCreatorPublishStatus(
+                              creator
+                            )
+                          }
+                          disabled={loading}
+                        >
+                          {creator.status === "published"
+                            ? "Unpublish"
+                            : "Publish"}
                         </button>
 
                         <button
@@ -1275,6 +1381,7 @@ export default function Creators() {
                               creator
                             )
                           }
+                          disabled={loading}
                         >
                           Remove
                         </button>
