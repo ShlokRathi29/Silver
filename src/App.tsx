@@ -1,8 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 
-const PublicSite = lazy(() => import("./pages/PublicSite"));
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Creators = lazy(() => import("./pages/Creators"));
@@ -11,10 +9,8 @@ const Team = lazy(() => import("./pages/Team"));
 type Page = "dashboard" | "creators" | "team";
 
 function App() {
-  const location = useLocation();
   const [session, setSession] = useState<boolean | null>(null);
   const [page, setPage] = useState<Page>("dashboard");
-  const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -29,14 +25,6 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  if (!isAdminRoute) {
-    return (
-      <Suspense fallback={<div className="public-message">Loading CreatorGear…</div>}>
-        <PublicSite />
-      </Suspense>
-    );
-  }
 
   if (session === null) {
     return <div>Loading...</div>;
@@ -54,10 +42,8 @@ function App() {
     <div className="app-layout">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <Link to="/">CreatorGear</Link>
+          CreatorGear
         </div>
-
-        <Link className="public-site-link" to="/">View public site</Link>
 
         <nav className="admin-nav" aria-label="Admin navigation">
           <button className={page === "dashboard" ? "admin-nav-item is-active" : "admin-nav-item"} aria-current={page === "dashboard" ? "page" : undefined} onClick={() => setPage("dashboard")}>

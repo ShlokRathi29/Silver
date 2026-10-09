@@ -19,7 +19,8 @@ The platform has two major consumers:
 ```text
                     ┌──────────────────────────┐
                     │      PUBLIC WEBSITE      │
-                    │          `/`             │
+                    │       PLANNED            │
+                    │ Separate consumer site   │
                     │ Creators + products      │
                     │ Gear + retailer links    │
                     └────────────┬─────────────┘
@@ -38,7 +39,7 @@ The platform has two major consumers:
                                  │
                     ┌────────────┴─────────────┐
                     │       ADMIN PANEL        │
-                    │         `/admin`         │
+                    │   CURRENT APPLICATION    │
                     │                          │
                     │ React + TypeScript       │
                     │ Vite                     │
@@ -1243,14 +1244,18 @@ Remaining:
 Status:
 
 ```text
-██████████░░░░░░░░░░ ~50%
+░░░░░░░░░░░░░░░░░░░░ 0%
 ```
 
-Initial implementation includes a homepage, published creator and product directories, detail pages, directory search, and active retailer links.
+This will be a separate project built after the admin data-entry workflow is reviewed and stable.
 
 Remaining:
 
+- public layout and page design
+- creator and product pages
+- gear browsing and search
 - public RLS verification
+- retailer and affiliate presentation
 - source/verification display
 - accessibility and mobile review
 
@@ -1261,14 +1266,15 @@ Remaining:
 Status:
 
 ```text
-████░░░░░░░░░░░░░░░░ ~20%
+░░░░░░░░░░░░░░░░░░░░ 0%
 ```
-
-Implemented baseline metadata, canonical URLs, Open Graph title/description, favicon, and robots rules.
 
 Remaining:
 
+- metadata and canonical URLs
 - sitemap
+- robots rules
+- Open Graph metadata
 - structured data
 - indexing
 - internal links
@@ -1310,7 +1316,7 @@ Database foundation       ██████████████████
 Admin CRUD foundation     ████████████████████ 100%
 Initial security          ██████████████░░░░░░ ~70%
 Admin productization      ████████████░░░░░░░░ ~60%
-Public website             ██████████░░░░░░░░░░ ~50%
+Public website             ░░░░░░░░░░░░░░░░░░░░ 0%
 SEO                        ░░░░░░░░░░░░░░░░░░░░ 0%
 Production deployment      ░░░░░░░░░░░░░░░░░░░░ 0%
 ```
@@ -1329,28 +1335,16 @@ The recommended next sequence is:
 CURRENT
   │
   ▼
-Test current admin after RLS migration
+Review the current admin data-entry flow
   │
   ▼
-Enforce Team role changes and last-owner safeguards in PostgreSQL
+Fix save reliability and data-quality gaps
   │
   ▼
-Test every role
+Refine the admin UI from actual usage
   │
   ▼
-Review supporting-table RLS
-  │
-  ▼
-Add data validation + duplicate prevention
-  │
-  ▼
-Admin UI polish
-  │
-  ▼
-Verify public RLS and complete launch readiness
-  │
-  ▼
-Connect public site to Supabase
+Build a separate public website
   │
   ▼
 SEO

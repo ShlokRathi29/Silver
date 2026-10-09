@@ -4,7 +4,7 @@ CreatorGear is a public-facing creator gear discovery platform backed by a Supab
 
 The core idea is to collect publicly available information about creators/influencers and the products they use, then expose that information through a clean public website. Products can have retailer-specific affiliate URLs. The admin system is designed so the project owner and trusted collaborators can add and update data without changing application code.
 
-> **Project status:** The admin panel and an initial public discovery site are implemented. Public pages show published creators/products and active retailer links; database-side role safeguards, public RLS verification, production data constraints, SEO, deployment, and production hardening remain.
+> **Project status:** This repository contains the internal CreatorGear admin and data-entry website connected to Supabase. The separate public-facing discovery website has not been started; it will be built after the admin workflow is reviewed and stabilized.
 
 ---
 
@@ -24,7 +24,7 @@ CreatorGear is intended to:
 
 The public website and admin panel should be treated as separate consumers of the same Supabase backend.
 
-The public site is served from `/`; the authenticated admin panel is served from `/admin`.
+This application is the authenticated admin panel. The future public website will be a separate consumer of the same Supabase database.
 
 ---
 
@@ -71,8 +71,7 @@ PostgreSQL is the source of truth.
 ```text
                          ┌─────────────────────┐
                          │   Public Website    │
-                         │     live app        │
-                         │      at `/`         │
+                         │       planned       │
                          └──────────┬──────────┘
                                     │
                                     ▼
@@ -86,7 +85,7 @@ PostgreSQL is the source of truth.
                                     │
                          ┌──────────┴──────────┐
                          │    Admin Panel      │
-                         │     at `/admin`     │
+                         │       current       │
                          │      React/Vite     │
                          └─────────────────────┘
 ```
@@ -675,9 +674,7 @@ Recommended:
 
 ## Phase D — Public website
 
-An initial public experience is implemented at `/`, including creator and product directories, detail pages, directory search, and active retailer links. The remaining work is to verify public RLS behavior and complete content, accessibility, and launch review.
-
-Build the public CreatorGear site.
+This is a separate future project. Build it after the admin data-entry workflow is reviewed and stabilized, using Supabase as its data source.
 
 Potential structure:
 
@@ -700,7 +697,7 @@ Public users should not have access to private/admin data.
 
 ## Phase E — SEO
 
-The public app now sets route-specific document titles, descriptions, canonical URLs, Open Graph text, a default site description, favicon, and robots rules. Search-engine rendering and a production-domain sitemap still need launch review.
+Plan SEO once the separate public website is designed and implemented.
 
 Before production launch:
 
@@ -777,31 +774,21 @@ Do not jump directly to the public website.
 Recommended order:
 
 ```text
-1. Verify current admin CRUD
+1. Review creator, product, and affiliate-link data-entry flows
         ↓
-2. Test roles + RLS
+2. Fix data integrity and save-reliability issues
         ↓
-3. Enforce and verify profile/role management
+3. Refine the admin UI based on actual usage
         ↓
-4. Review supporting-table RLS
+4. Build the separate public website
         ↓
-5. Add validation + duplicate protection
+5. Connect public pages to published Supabase data
         ↓
-6. Polish admin panel
+6. Add SEO and public content review
         ↓
-7. Build public website
+7. Host the admin and public websites
         ↓
-8. Connect public website to Supabase
-        ↓
-9. SEO
-        ↓
-10. Custom domain + deployment
-        ↓
-11. Affiliate readiness
-        ↓
-12. Production security/performance review
-        ↓
-13. Launch
+8. Complete affiliate readiness and launch checks
 ```
 
 ---
@@ -814,7 +801,7 @@ If continuing this project in another ChatGPT conversation/model, start with:
 
 The next immediate technical task is:
 
-**Verify public read behavior against Supabase RLS, then complete SEO, deployment, and launch readiness for the initial public site.**
+**Review and stabilize the current admin data-entry workflows. Build the separate public-facing website afterward, then prepare both applications for hosting and monetization.**
 
 ---
 
@@ -869,9 +856,7 @@ The next immediate technical task is:
 | Admin form validation and duplicate checks | ✅ Implemented (client-side workflow) |
 | Creator search and status filtering | ✅ Implemented |
 | Database-wide duplicate constraints | ⏳ Remaining |
-| Initial public website | ✅ Implemented |
-| Public RLS verification | ⏳ Remaining |
-| Route metadata and robots baseline | ✅ Implemented |
+| Public website | ⏳ Future project |
 | SEO | ⏳ Remaining |
 | Custom domain | ⏳ Remaining |
 | Production deployment | ⏳ Remaining |
@@ -884,8 +869,7 @@ The next immediate technical task is:
 
 **Current immediate next action:**
 
-1. Verify public pages expose only published creators/products and active retailer links.
-2. Complete metadata, canonical URLs, sitemap, and robots configuration.
-3. Configure production environment, hosting, and custom domain.
-4. Set up backups, monitoring, and affiliate disclosures.
-5. Complete the final security, accessibility, mobile, and performance review.
+1. Review the current admin workflow for adding, editing, publishing, and removing data.
+2. Address save reliability, duplicate handling, and data-quality gaps.
+3. Use the admin with sample records and tune the data-entry experience.
+4. Start the separate public-facing website after the admin workflow is stable.

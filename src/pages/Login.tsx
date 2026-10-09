@@ -27,37 +27,56 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <div className="login-card">
-        <div className="brand">
-          <h1>CreatorGear</h1>
-          <p>Admin Portal</p>
-        </div>
+      <div className="login-shell">
+        <main className="login-panel">
+          <div className="login-brand login-brand-compact">
+            <span className="login-brand-mark">CG</span>
+            <span>CreatorGear</span>
+          </div>
 
-        <form onSubmit={handleLogin}>
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-          />
+          <div className="login-form-heading">
+            <span className="login-eyebrow">ADMIN WORKSPACE</span>
+            <h2>Welcome back</h2>
+            <p>Sign in to continue managing CreatorGear.</p>
+          </div>
 
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
+          <form onSubmit={handleLogin}>
+            <div className="login-field">
+              <label htmlFor="login-email">Email address</label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                autoComplete="username"
+                required
+              />
+            </div>
 
-          {error && <p className="error">{error}</p>}
+            <div className="login-field">
+              <label htmlFor="login-password">Password</label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
+            {error && <p className="login-error" role="alert">{error}</p>}
+
+            <button className="login-submit" type="submit" disabled={loading}>
+              {loading ? "Signing in…" : "Sign in"}
+              {!loading && <span aria-hidden="true">→</span>}
+            </button>
+          </form>
+
+          <p className="login-help">Access is managed by your workspace owner.</p>
+        </main>
       </div>
     </div>
   );
