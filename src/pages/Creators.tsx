@@ -53,6 +53,8 @@ export default function Creators() {
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
 
   const [showForm, setShowForm] = useState(false);
+  const [creatorSearch, setCreatorSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [editingCreatorId, setEditingCreatorId] =
     useState<string | null>(null);
@@ -351,13 +353,94 @@ export default function Creators() {
     setError("");
 
     try {
-      if (!name.trim()) {
-        throw new Error(
-          "Creator name is required."
-        );
+      const normalizedName = name.trim().replace(/\s+/g, " ");
+      if (!normalizedName) {
+        throw new Error("Creator name is required.");
       }
 
-      const slug = createSlug(name);
+      const existingCreator = creators.find(
+        (creator) => creator.id === editingCreatorId
+      );
+      const slug =
+        createSlug(normalizedName) ||
+        existingCreator?.slug ||
+        `creator-${crypto.randomUUID().slice(0, 8)}`;
+
+      const duplicateName = creators.find(
+        (creator) =>
+          creator.id !== editingCreatorId &&
+          creator.name.trim().replace(/\s+/g, " ").toLocaleLowerCase() ===
+            normalizedName.toLocaleLowerCase()
+      );
+      if (duplicateName) {
+        throw new Error(`A creator named "${duplicateName.name}" already exists.`);
+      }
+
+      const followerValue = followerCount.trim();
+      const parsedFollowerCount = followerValue ? Number(followerValue) : null;
+      if (
+        parsedFollowerCount !== null &&
+        (!Number.isSafeInteger(parsedFollowerCount) || parsedFollowerCount < 0)
+      ) {
+        throw new Error("Followers must be a whole number greater than or equal to zero.");
+      }
+
+      const completeProducts = products.filter(
+        (product) => product.name.trim() || product.product_type_id
+      );
+      const seenProducts = new Set<string>();
+      for (const product of completeProducts) {
+        if (!product.name.trim() || !product.product_type_id) {
+          throw new Error("Each product needs both a product type and a name.");
+        }
+
+        const productKey = `${product.product_type_id}:${product.name.trim().toLocaleLowerCase()}`;
+        if (seenProducts.has(productKey)) {
+          throw new Error(`The product "${product.name.trim()}" appears more than once for this creator.`);
+        }
+        seenProducts.add(productKey);
+
+        const seenRetailers = new Set<string>();
+        for (const link of product.links) {
+          const retailerName = link.retailer_id.trim();
+          const affiliateUrl = link.affiliate_url.trim();
+          if (!retailerName && !affiliateUrl) {
+            if (link.id) {
+              throw new Error("Use Remove on an existing affiliate link instead of clearing its fields.");
+            }
+            continue;
+          }
+          if (!retailerName || !affiliateUrl) {
+            throw new Error("Each affiliate link needs both a retailer and a URL.");
+          }
+
+          let parsedUrl: URL;
+          try {
+            parsedUrl = new URL(affiliateUrl);
+          } catch {
+            throw new Error(`Enter a valid URL for ${retailerName}.`);
+          }
+          if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            throw new Error(`Affiliate URLs for ${retailerName} must start with http:// or https://.`);
+          }
+
+          const retailerKey = retailerName.toLocaleLowerCase();
+          if (seenRetailers.has(retailerKey)) {
+            throw new Error(`Retailer "${retailerName}" is listed more than once for this product.`);
+          }
+          seenRetailers.add(retailerKey);
+        }
+      }
+
+      const { data: slugMatches, error: slugCheckError } = await supabase
+        .from("creators")
+        .select("id")
+        .eq("slug", slug)
+        .limit(2);
+      if (slugCheckError) throw slugCheckError;
+      if (slugMatches?.some((creator) => creator.id !== editingCreatorId)) {
+        throw new Error("Another creator already uses this page URL. Change the name to make it unique.");
+      }
 
       let creatorId = editingCreatorId;
 
@@ -370,14 +453,12 @@ export default function Creators() {
           await supabase
             .from("creators")
             .update({
-              name: name.trim(),
+              name: normalizedName,
               slug,
               bio: bio.trim() || null,
               country_name:
                 country.trim() || null,
-              follower_count: followerCount
-                ? Number(followerCount)
-                : null,
+              follower_count: parsedFollowerCount,
             })
             .eq("id", editingCreatorId);
 
@@ -389,14 +470,12 @@ export default function Creators() {
           await supabase
             .from("creators")
             .insert({
-              name: name.trim(),
+              name: normalizedName,
               slug,
               bio: bio.trim() || null,
               country_name:
                 country.trim() || null,
-              follower_count: followerCount
-                ? Number(followerCount)
-                : null,
+              follower_count: parsedFollowerCount,
               status: "draft",
             })
             .select()
@@ -453,7 +532,7 @@ export default function Creators() {
       // SAVE PRODUCTS
       // -----------------------------
 
-      for (const product of products) {
+      for (const product of completeProducts) {
         if (
           !product.name.trim() ||
           !product.product_type_id
@@ -918,6 +997,16 @@ export default function Creators() {
     return value.toLocaleString();
   }
 
+  const filteredCreators = creators.filter((creator) => {
+    const query = creatorSearch.trim().toLocaleLowerCase();
+    const matchesQuery =
+      !query ||
+      creator.name.toLocaleLowerCase().includes(query) ||
+      (creator.country_name || "").toLocaleLowerCase().includes(query);
+    const matchesStatus = statusFilter === "all" || creator.status === statusFilter;
+    return matchesQuery && matchesStatus;
+  });
+
   // -----------------------------
   // UI
   // -----------------------------
@@ -1096,7 +1185,6 @@ export default function Creators() {
                             )
                           )
                         }
-                        required
                       >
                         <option value="">
                           Select product type
@@ -1199,7 +1287,6 @@ export default function Creators() {
                                   )
                                 }
                                 placeholder="e.g. Amazon"
-                                required
                               />
                             </div>
 
@@ -1225,7 +1312,6 @@ export default function Creators() {
                                   )
                                 }
                                 placeholder="https://..."
-                                required
                               />
                             </div>
                           </div>
@@ -1285,6 +1371,27 @@ export default function Creators() {
 
       {/* CREATOR TABLE */}
 
+      <div className="creator-toolbar">
+        <input
+          type="search"
+          value={creatorSearch}
+          onChange={(event) => setCreatorSearch(event.target.value)}
+          placeholder="Search creators or countries"
+          aria-label="Search creators or countries"
+        />
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          aria-label="Filter creators by status"
+        >
+          <option value="all">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+        <span>{filteredCreators.length} of {creators.length} creators</span>
+      </div>
+
       <div className="table-card">
         {creators.length === 0 ? (
           <div className="empty-state">
@@ -1296,6 +1403,11 @@ export default function Creators() {
               Add your first creator to
               get started.
             </p>
+          </div>
+        ) : filteredCreators.length === 0 ? (
+          <div className="empty-state">
+            <h3>No matching creators</h3>
+            <p>Try another search or status filter.</p>
           </div>
         ) : (
           <table>
@@ -1311,7 +1423,7 @@ export default function Creators() {
             </thead>
 
             <tbody>
-              {creators.map(
+              {filteredCreators.map(
                 (creator) => (
                   <tr key={creator.id}>
                     <td>

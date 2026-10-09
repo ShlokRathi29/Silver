@@ -19,11 +19,9 @@ The platform has two major consumers:
 ```text
                     ┌──────────────────────────┐
                     │      PUBLIC WEBSITE      │
-                    │                          │
-                    │ Creators                 │
-                    │ Products                │
-                    │ Gear                    │
-                    │ Affiliate links         │
+                    │          `/`             │
+                    │ Creators + products      │
+                    │ Gear + retailer links    │
                     └────────────┬─────────────┘
                                  │
                                  │ Supabase
@@ -40,6 +38,7 @@ The platform has two major consumers:
                                  │
                     ┌────────────┴─────────────┐
                     │       ADMIN PANEL        │
+                    │         `/admin`         │
                     │                          │
                     │ React + TypeScript       │
                     │ Vite                     │
@@ -1207,8 +1206,8 @@ Completed:
 
 Remaining:
 
-- role-management UI
 - real-user permission tests
+- database-side safeguards for role/profile updates
 - supporting-table policy review
 - Security Advisor final review
 - Auth hardening
@@ -1220,7 +1219,7 @@ Remaining:
 Status:
 
 ```text
-██████░░░░░░░░░░░░░░ ~30%
+████████████░░░░░░░░ ~60%
 ```
 
 Completed:
@@ -1232,13 +1231,10 @@ Completed:
 
 Remaining:
 
-- search
-- filtering
-- validation
-- duplicate prevention
 - pagination
 - better role-aware UI
 - audit/history
+- database-level duplicate constraints
 
 ---
 
@@ -1247,19 +1243,16 @@ Remaining:
 Status:
 
 ```text
-░░░░░░░░░░░░░░░░░░░░ 0%
+██████████░░░░░░░░░░ ~50%
 ```
+
+Initial implementation includes a homepage, published creator and product directories, detail pages, directory search, and active retailer links.
 
 Remaining:
 
-- public layout
-- creator pages
-- product pages
-- gear browsing
-- search
-- affiliate presentation
+- public RLS verification
 - source/verification display
-- mobile optimization
+- accessibility and mobile review
 
 ---
 
@@ -1268,15 +1261,14 @@ Remaining:
 Status:
 
 ```text
-░░░░░░░░░░░░░░░░░░░░ 0%
+████░░░░░░░░░░░░░░░░ ~20%
 ```
+
+Implemented baseline metadata, canonical URLs, Open Graph title/description, favicon, and robots rules.
 
 Remaining:
 
-- metadata
 - sitemap
-- robots
-- canonical URLs
 - structured data
 - indexing
 - internal links
@@ -1317,8 +1309,8 @@ A useful high-level interpretation is:
 Database foundation       ████████████████████ 100%
 Admin CRUD foundation     ████████████████████ 100%
 Initial security          ██████████████░░░░░░ ~70%
-Admin productization      ██████░░░░░░░░░░░░░░ ~30%
-Public website             ░░░░░░░░░░░░░░░░░░░░ 0%
+Admin productization      ████████████░░░░░░░░ ~60%
+Public website             ██████████░░░░░░░░░░ ~50%
 SEO                        ░░░░░░░░░░░░░░░░░░░░ 0%
 Production deployment      ░░░░░░░░░░░░░░░░░░░░ 0%
 ```
@@ -1340,7 +1332,7 @@ CURRENT
 Test current admin after RLS migration
   │
   ▼
-Build protected Team / Role Management
+Enforce Team role changes and last-owner safeguards in PostgreSQL
   │
   ▼
 Test every role
@@ -1355,7 +1347,7 @@ Add data validation + duplicate prevention
 Admin UI polish
   │
   ▼
-Build public website
+Verify public RLS and complete launch readiness
   │
   ▼
 Connect public site to Supabase
@@ -1493,7 +1485,7 @@ CreatorGear should not be considered production-ready until all of these are tru
 
 # 41. Current Resume Point
 
-**The project is currently at the end of the first major security migration.**
+**The project is currently at the end of the first major security migration. The Team management UI has been implemented and connected to navigation; database-side safeguards and role-by-role verification remain.**
 
 The last completed operation was:
 
@@ -1501,6 +1493,6 @@ The last completed operation was:
 
 The next operation should be:
 
-> Test the current admin panel with the new RLS, then implement safe profile/role management and review the remaining supporting-table RLS.
+> Test the current admin panel with the new RLS, then enforce Team profile changes and last-active-owner protection in PostgreSQL and review the remaining supporting-table RLS.
 
 Do not assume later phases have already been implemented.

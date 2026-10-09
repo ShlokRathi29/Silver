@@ -4,7 +4,7 @@ CreatorGear is a public-facing creator gear discovery platform backed by a Supab
 
 The core idea is to collect publicly available information about creators/influencers and the products they use, then expose that information through a clean public website. Products can have retailer-specific affiliate URLs. The admin system is designed so the project owner and trusted collaborators can add and update data without changing application code.
 
-> **Project status:** Core database, authentication, admin CRUD workflow, affiliate-link workflow, dashboard, and initial RLS security model are implemented. Public-site implementation, deeper role management, validation, SEO, deployment, and production hardening remain.
+> **Project status:** The admin panel and an initial public discovery site are implemented. Public pages show published creators/products and active retailer links; database-side role safeguards, public RLS verification, production data constraints, SEO, deployment, and production hardening remain.
 
 ---
 
@@ -23,6 +23,8 @@ CreatorGear is intended to:
 - Use Supabase as the source of truth.
 
 The public website and admin panel should be treated as separate consumers of the same Supabase backend.
+
+The public site is served from `/`; the authenticated admin panel is served from `/admin`.
 
 ---
 
@@ -69,8 +71,8 @@ PostgreSQL is the source of truth.
 ```text
                          ┌─────────────────────┐
                          │   Public Website    │
-                         │   (planned/current  │
-                         │    development)     │
+                         │     live app        │
+                         │      at `/`         │
                          └──────────┬──────────┘
                                     │
                                     ▼
@@ -84,6 +86,7 @@ PostgreSQL is the source of truth.
                                     │
                          ┌──────────┴──────────┐
                          │    Admin Panel      │
+                         │     at `/admin`     │
                          │      React/Vite     │
                          └─────────────────────┘
 ```
@@ -627,7 +630,7 @@ The remaining work should be handled in phases.
 ### Remaining
 
 - Test all current RLS behavior using actual users with different roles.
-- Build safe profile/user role management.
+- Enforce profile role changes and last-active-owner protection at the database layer; the Team page currently provides the management UI.
 - Decide exactly who can change roles.
 - Ensure an owner cannot accidentally be removed or downgraded.
 - Review supporting-table policies.
@@ -642,13 +645,10 @@ The remaining work should be handled in phases.
 
 Recommended:
 
-- Creator search
-- Creator filtering
-- Better empty states
 - Pagination when data grows
-- Duplicate prevention
-- Better validation
-- URL validation
+- Better empty states
+- Creator name and slug duplicate checks
+- Validation for creator names, follower counts, products, and affiliate URLs
 - Slug generation
 - Better error messages
 - Confirmation dialogs
@@ -662,7 +662,7 @@ Recommended:
 
 Recommended:
 
-- Prevent duplicate creators.
+- Prevent duplicate creator names and page slugs in the admin workflow.
 - Prevent duplicate products where appropriate.
 - Add proper source tracking.
 - Add verification workflows.
@@ -674,6 +674,8 @@ Recommended:
 ---
 
 ## Phase D — Public website
+
+An initial public experience is implemented at `/`, including creator and product directories, detail pages, directory search, and active retailer links. The remaining work is to verify public RLS behavior and complete content, accessibility, and launch review.
 
 Build the public CreatorGear site.
 
@@ -697,6 +699,8 @@ Public users should not have access to private/admin data.
 ---
 
 ## Phase E — SEO
+
+The public app now sets route-specific document titles, descriptions, canonical URLs, Open Graph text, a default site description, favicon, and robots rules. Search-engine rendering and a production-domain sitemap still need launch review.
 
 Before production launch:
 
@@ -777,7 +781,7 @@ Recommended order:
         ↓
 2. Test roles + RLS
         ↓
-3. Finish profile/role management
+3. Enforce and verify profile/role management
         ↓
 4. Review supporting-table RLS
         ↓
@@ -810,7 +814,7 @@ If continuing this project in another ChatGPT conversation/model, start with:
 
 The next immediate technical task is:
 
-**Verify the current admin application after the RLS migration, then implement safe role/profile management and review supporting-table RLS.**
+**Verify public read behavior against Supabase RLS, then complete SEO, deployment, and launch readiness for the initial public site.**
 
 ---
 
@@ -858,11 +862,16 @@ The next immediate technical task is:
 | RLS enabled | ✅ Implemented |
 | Core RLS refinement | ✅ Completed |
 | Role helper hardening | ✅ Completed |
-| Role-management UI | ⏳ Remaining |
+| Role-management UI | ✅ Implemented and connected |
+| Database-side role-change safeguards | ⏳ Remaining |
 | Full role/RLS testing | ⏳ Remaining |
 | Supporting-table RLS review | ⏳ Remaining |
-| Advanced validation | ⏳ Remaining |
-| Public website | ⏳ Remaining |
+| Admin form validation and duplicate checks | ✅ Implemented (client-side workflow) |
+| Creator search and status filtering | ✅ Implemented |
+| Database-wide duplicate constraints | ⏳ Remaining |
+| Initial public website | ✅ Implemented |
+| Public RLS verification | ⏳ Remaining |
+| Route metadata and robots baseline | ✅ Implemented |
 | SEO | ⏳ Remaining |
 | Custom domain | ⏳ Remaining |
 | Production deployment | ⏳ Remaining |
@@ -875,8 +884,8 @@ The next immediate technical task is:
 
 **Current immediate next action:**
 
-1. Verify Dashboard/Creators CRUD after the RLS migration.
-2. Create safe user/profile role management.
-3. Test owner/admin/editor/researcher/reviewer permissions with real accounts.
-4. Review all supporting-table RLS policies.
-5. Then continue with admin quality improvements and the public website.
+1. Verify public pages expose only published creators/products and active retailer links.
+2. Complete metadata, canonical URLs, sitemap, and robots configuration.
+3. Configure production environment, hosting, and custom domain.
+4. Set up backups, monitoring, and affiliate disclosures.
+5. Complete the final security, accessibility, mobile, and performance review.

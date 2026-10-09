@@ -198,13 +198,23 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={loadDashboard}
-          disabled={loading}
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
+        <div className="dashboard-header-actions">
+          <button
+            type="button"
+            onClick={loadDashboard}
+            disabled={loading}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={logout}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* ERROR */}
@@ -238,10 +248,13 @@ export default function Dashboard() {
 
         {profile && (
           <div className="dashboard-role">
-            <span>Role</span>
-            <strong>{profile.role}</strong>
+            <span>Role </span>
+            <strong className="inline-block px-2 py-1 ml-2 text-sm font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded">
+              {profile.role}
+            </strong>
           </div>
         )}
+
       </section>
 
       {/* STATS */}
